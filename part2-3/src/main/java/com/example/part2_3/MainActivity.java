@@ -23,7 +23,5 @@ public class MainActivity extends AppCompatActivity {
         linear.addView(bt2);
 
         setContentView(linear);
-
-//        setContentView(R.layout.activity_main);
     }
 }
