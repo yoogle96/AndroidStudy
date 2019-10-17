@@ -5,8 +5,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
@@ -29,72 +27,43 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     static Context ctx;
 
     @Override
+    public void onNewToken(String token){
+        Log.i("YOOGLE_TOKEN", token);
+        System.out.println("YOOGLE_TOKEN : " + token);
+        super.onNewToken(token);
+    }
+
+    @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        // ...
-
-        // TODO(developer): Handle FCM messages here.
-        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
-        Log.d(TAG, "From: " + remoteMessage.getFrom());
-
-        String nhMessage;
-        // Check if message contains a notification payload.
-        if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
-
-            nhMessage = remoteMessage.getNotification().getBody();
-        }
-        else {
-            nhMessage = remoteMessage.getData().values().iterator().next();
-        }
-
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
-//        if (MainActivity.isVisible) {
-//            MainActivity.mainActivity.ToastNotify(nhMessage);
-//        }
-        sendNotification(nhMessage);
+        sendNotification(remoteMessage.getData().get("data"));
     }
 
     private void sendNotification(String msg) {
-
-        Intent intent = new Intent(ctx, MainActivity.class);
+        Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT);
 
-        mNotificationManager = (NotificationManager)
-                ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        String channelId = getString(R.string.default_notification_channel_id);
+//        Uri defaultSoundUri = RingtoneManager.getDefaultUri(Ringtone.);
 
-        PendingIntent contentIntent = PendingIntent.getActivity(ctx, 0,
-                intent, PendingIntent.FLAG_ONE_SHOT);
-
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-
-//        createChannelAndHandleNotifications(ctx);
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(
-                ctx,
-                NOTIFICATION_CHANNEL_ID)
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentText("FCM Message")
                 .setContentText(msg)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL);
+                .setAutoCancel(true)
+//                .setSound(defaultSoundUri)
+                .setContentIntent(pendingIntent);
 
-        notificationBuilder.setContentIntent(contentIntent);
-        mNotificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
-    }
-
-    public static void createChannelAndHandleNotifications(Context context) {
-        ctx = context;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    NOTIFICATION_CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription(NOTIFICATION_CHANNEL_DESCRIPTION);
-            channel.setShowBadge(true);
-
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            String channelName = getString(R.string.default_notification_channel_id);
+            NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
             notificationManager.createNotificationChannel(channel);
         }
+
+        notificationManager.notify(0, notificationBuilder.build());
+
+
     }
 }
